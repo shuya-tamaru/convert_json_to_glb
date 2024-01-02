@@ -13,6 +13,7 @@ pointsArray= []
 normalsArray = []
 facesArray = []
 userDataArray = []
+materialsArray = []
 
 for mesh_data in meshes_data:
     # 頂点データを準備
@@ -34,6 +35,19 @@ for mesh_data in meshes_data:
     userData = mesh_data["userData"]
     userDataArray.append(userData)
 
+    # マテリアルを準備
+    normalized_color_data = mesh_data["materials"]
+    normalized_color_data.append(1.0)
+
+    material = pygltflib.Material(
+        pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(
+            baseColorFactor=normalized_color_data,
+            metallicFactor=0.0, 
+            roughnessFactor=1.0  
+    ),
+    doubleSided=True
+    )
+    materialsArray.append(material)
 
 binary_blob = bytearray()
 for points, normals,faces in zip(pointsArray, normalsArray, facesArray):
@@ -118,7 +132,7 @@ nodes = []
 for i, userData in enumerate(userDataArray):
     mesh_index = len(meshes)
     meshes.append(pygltflib.Mesh(
-        primitives=[pygltflib.Primitive(attributes=pygltflib.Attributes(POSITION=i * 3 + 1,NORMAL=i * 3 + 2), indices=i * 3)]
+        primitives=[pygltflib.Primitive(attributes=pygltflib.Attributes(POSITION=i * 3 + 1,NORMAL=i * 3 + 2), indices=i * 3, material = i)]
     ))
     meshes[mesh_index].extras = {"id": userData}
     nodes.append(pygltflib.Node(mesh=mesh_index))
@@ -128,6 +142,7 @@ gltf = pygltflib.GLTF2(
     scenes=[pygltflib.Scene(nodes=list(range(len(nodes))))],
     nodes=nodes,
     meshes=meshes,
+    materials=materialsArray,
     accessors=accessors,
     bufferViews=bufferViews,
     buffers=[buffer]
@@ -138,4 +153,4 @@ gltf.set_binary_blob(bytes(binary_blob))
 
 
 # GLTFファイルの保存
-gltf.save("test.glb")
+gltf.save("test_model.glb")
